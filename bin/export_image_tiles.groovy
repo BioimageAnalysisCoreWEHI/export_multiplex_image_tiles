@@ -49,6 +49,17 @@ int success = 0
 int fail = 0
 def start = System.currentTimeMillis()
 
+def normalizeTileFilename = { String name ->
+    def updated = name.replace(" SIMS [", " SIMS_[")
+    def matcher = (updated =~ /\[x=-?\d+,y=-?\d+,w=\d+,h=\d+\]/)
+    if (matcher.find()) {
+        def coordBlock = matcher.group(0)
+        def normalizedCoordBlock = coordBlock.replace(',', '_')
+        updated = updated.replace(coordBlock, normalizedCoordBlock)
+    }
+    return updated
+}
+
 for (entry in images) {
     idx++
     def imageName = entry.getImageName()
@@ -69,8 +80,31 @@ for (entry in images) {
             .imageExtension(".tiff")  // preserves multichannel stack
             .writeTiles(imageOutDir.absolutePath)
 
+        int renamedCount = 0
+        imageOutDir.eachFile { tileFile ->
+            if (!tileFile.isFile()) {
+                return
+            }
+
+            def normalizedName = normalizeTileFilename(tileFile.name)
+            if (normalizedName == tileFile.name) {
+                return
+            }
+
+            def renamedFile = new File(tileFile.parentFile, normalizedName)
+            if (renamedFile.exists()) {
+                renamedFile.delete()
+            }
+
+            if (tileFile.renameTo(renamedFile)) {
+                renamedCount++
+            } else {
+                throw new RuntimeException("Failed to rename tile: ${tileFile.name} -> ${normalizedName}")
+            }
+        }
+
         success++
-        println "[${idx}/${images.size()}] Finished tile export: ${imageName} -> ${imageOutDir.absolutePath}"
+        println "[${idx}/${images.size()}] Finished tile export: ${imageName} -> ${imageOutDir.absolutePath} (renamed ${renamedCount} tiles)"
     } catch (Throwable t) {
         fail++
         println "[${idx}/${images.size()}] Failed tile export for ${imageName}: ${t.getMessage()}"

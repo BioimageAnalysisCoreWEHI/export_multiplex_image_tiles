@@ -45,3 +45,25 @@ nextflow run main.nf \
 - `tiles/` output directory containing one folder per image in the QuPath project.
 - Per-image folder names are sanitized from QuPath image names.
 - `qupath_tile_export.log` with the full QuPath export log.
+
+## Merging tile GeoJSON back to full-image GeoJSON
+
+Use `bin/merge_tile_geojson.py` after segmentation on tiles.
+
+Example:
+
+```bash
+python bin/merge_tile_geojson.py \
+	--input-dir /path/to/tile_geojson \
+	--output-dir /path/to/merged_geojson \
+	--overlap 200 \
+	--core-filter \
+	--dedup-iou 0.4
+```
+
+Notes:
+
+- The script parses tile offsets from filenames like `[x=824,y=1648,w=1024,h=400]`.
+- It shifts polygons into global coordinates before merging.
+- `--core-filter` keeps objects whose centroid falls in the non-overlap core of each tile.
+- `--dedup-iou` applies NMS-style duplicate removal in overlap regions.
