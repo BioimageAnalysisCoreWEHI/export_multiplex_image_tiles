@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/BioimageAnalysisCoreWEHI/export_multiplex_image_tiles/main/nextflow_schema.json",
+  "title": "export_multiplex_image_tiles pipeline parameters",
+  "description": "Headless QuPath tile export from a QuPath project",
+  "type": "object",
+  "$defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "required": ["project", "qupath_bin", "tile_size", "tile_overlap", "outdir"],
+      "properties": {
+        "project": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "description": "Path to QuPath project .qpproj file"
+        },
+        "qupath_bin": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "description": "Path to QuPath executable, e.g. /vast/projects/SOLACE2/QuPath/bin/QuPath"
+        },
+        "script": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "default": "bin/export_image_tiles.groovy",
+          "description": "Path to Groovy script run by QuPath in headless mode"
+        },
+        "tile_size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Tile size in pixels"
+        },
+        "tile_overlap": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Tile overlap in pixels"
+        },
+        "downsample": {
+          "type": "number",
+          "minimum": 0.000001,
+          "default": 1.0,
+          "description": "Downsample factor for tile export (1.0 = full resolution)"
+        },
+        "include_partial_tiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include edge tiles that are smaller than tile_size"
+        },
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "description": "Output directory for exported tiles"
+        },
+        "publish_dir_mode": {
+          "type": "string",
+          "default": "copy",
+          "description": "Method used by Nextflow publishDir",
+          "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"]
+        }
+      }
+    },
+    "generic_options": {
+      "title": "Generic options",
+      "type": "object",
+      "properties": {
+        "validate_params": {
+          "type": "boolean",
+          "default": true,
+          "hidden": true,
+          "description": "Validate parameters against schema"
+        }
+      }
+    }
+  },
+  "allOf": [
+    { "$ref": "#/$defs/input_output_options" },
+    { "$ref": "#/$defs/generic_options" }
+  ]
+}
