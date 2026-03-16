@@ -19,6 +19,7 @@ Nextflow pipeline for exporting tiles from images in a QuPath project using QuPa
 Optional:
 
 - `--script` Groovy script path (default: `bin/export_image_tiles.groovy`).
+	Relative paths are resolved from the pipeline directory.
 - `--downsample` Downsample factor for tile export (default: `1.0`).
 - `--include_partial_tiles` Include edge tiles smaller than tile size (default: `true`).
 - `--outdir` Output directory (default: `results`).

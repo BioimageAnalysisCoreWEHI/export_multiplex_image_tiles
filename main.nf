@@ -79,9 +79,14 @@ workflow {
         error "QuPath binary does not exist: ${params.qupath_bin}"
     }
 
-    def scriptFile = file(params.script)
-    if (!scriptFile.exists()) {
-        error "Groovy script does not exist: ${params.script}"
+    def scriptParam = params.script.toString()
+    def scriptCandidates = [
+        file(scriptParam),
+        file("${projectDir}/${scriptParam}")
+    ]
+    def scriptFile = scriptCandidates.find { it.exists() }
+    if (!scriptFile) {
+        error "Groovy script does not exist: ${params.script} (tried: ${scriptCandidates*.toString().join(', ')})"
     }
 
     if ((params.tile_size as int) <= 0) {
