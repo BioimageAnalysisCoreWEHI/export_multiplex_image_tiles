@@ -12,12 +12,12 @@ Nextflow pipeline for exporting tiles from images in a QuPath project using QuPa
 ## Required parameters
 
 - `--project` Path to QuPath project (`.qpproj`).
-- `--qupath_bin` Path to QuPath executable (for example `/vast/projects/SOLACE2/QuPath/bin/QuPath`).
 - `--tile_size` Tile size in pixels (for example `1024`).
 - `--tile_overlap` Tile overlap in pixels (for example `128`).
 
 Optional:
 
+- `--qupath_bin` Path to QuPath executable (default: `/stornext/System/data/software/rhel/9/base/tools/QuPath/0.6.0/bin/QuPath`).
 - `--script` Groovy script path (default: `bin/export_image_tiles.groovy`).
 	Relative paths are resolved from the pipeline directory.
 - `--downsample` Downsample factor for tile export (default: `1.0`).
@@ -32,7 +32,7 @@ Run on HPC with Singularity and medium resources:
 nextflow run main.nf \
 	-profile singularity,medium \
 	--project /path/to/project.qpproj \
-	--qupath_bin /vast/projects/SOLACE2/QuPath/bin/QuPath \
+	--qupath_bin /stornext/System/data/software/rhel/9/base/tools/QuPath/0.6.0/bin/QuPath \
 	--tile_size 1024 \
 	--tile_overlap 128 \
 	--downsample 1.0 \
