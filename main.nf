@@ -11,20 +11,47 @@ params.outdir = "results"
 params.publish_dir_mode = "copy"
 params.validate_params = true
 
-process EXPORT_QUPATH_TILES {
+process LIST_IMAGES {
     tag { project_path.tokenize('/').last() }
-    label 'process_medium'
-
-    publishDir "${params.outdir}", mode: params.publish_dir_mode
 
     input:
-    tuple val(project_path), val(qupath_bin), val(script_path), val(tile_size), val(tile_overlap), val(downsample), val(include_partial_tiles)
+    tuple val(project_path), val(qupath_bin), val(list_script_path)
 
     output:
-    path "tiles"
-    path "qupath_tile_export.log"
+    path "image_names.txt"
 
     script:
+    """
+    set -euo pipefail
+
+    export IMAGE_LIST_FILE="\$(pwd)/image_names.txt"
+
+    "${qupath_bin}" script "${list_script_path}" --project "${project_path}" \
+        2>&1 | tee list_images.log
+
+    if [[ ! -f image_names.txt ]]; then
+        echo "ERROR: image_names.txt was not created by the list script" >&2
+        exit 1
+    fi
+    """
+}
+
+process EXPORT_QUPATH_TILES {
+    tag { image_name }
+    label 'process_medium'
+
+    publishDir "${params.outdir}/tiles", mode: params.publish_dir_mode, saveAs: { new File(it).name }
+    publishDir "${params.outdir}/logs",  mode: params.publish_dir_mode
+
+    input:
+    tuple val(project_path), val(qupath_bin), val(script_path), val(image_name), val(tile_size), val(tile_overlap), val(downsample), val(include_partial_tiles)
+
+    output:
+    path "tile_output/*", emit: tiles
+    path "*.log",         emit: logs
+
+    script:
+    def safeName = image_name.replaceAll('[^a-zA-Z0-9._-]', '_')
     """
     set -euo pipefail
 
@@ -43,15 +70,16 @@ process EXPORT_QUPATH_TILES {
       exit 1
     fi
 
-    mkdir -p tiles
-    export QUPATH_EXPORT_DIR="\$(pwd)/tiles"
+    mkdir -p tile_output
+    export QUPATH_EXPORT_DIR="\$(pwd)/tile_output"
     export TILE_SIZE="${tile_size}"
     export TILE_OVERLAP="${tile_overlap}"
     export TILE_DOWNSAMPLE="${downsample}"
     export INCLUDE_PARTIAL_TILES="${include_partial_tiles}"
+    export IMAGE_NAME="${image_name}"
 
     "${qupath_bin}" script "${script_path}" --project "${project_path}" \
-      2>&1 | tee qupath_tile_export.log
+      2>&1 | tee "${safeName}_export.log"
     """
 }
 
@@ -99,15 +127,29 @@ workflow {
         error "downsample must be > 0"
     }
 
-    Channel
-        .of(tuple(
-            projectFile.toString(),
-            qupathExe.toString(),
-            scriptFile.toString(),
-            params.tile_size as int,
-            params.tile_overlap as int,
-            params.downsample as double,
-            params.include_partial_tiles as boolean
-        ))
+    def listScript = file("${projectDir}/bin/list_images.groovy")
+    if (!listScript.exists()) {
+        error "List images script does not exist: ${listScript}"
+    }
+
+    Channel.of(tuple(projectFile.toString(), qupathExe.toString(), listScript.toString()))
+        | LIST_IMAGES
+
+    LIST_IMAGES.out
+        .splitText(trim: true)
+        .filter { it }
+        .map { image_name ->
+            tuple(
+                projectFile.toString(),
+                qupathExe.toString(),
+                scriptFile.toString(),
+                image_name,
+                params.tile_size as int,
+                params.tile_overlap as int,
+                params.downsample as double,
+                params.include_partial_tiles as boolean
+            )
+        }
         | EXPORT_QUPATH_TILES
 }
+

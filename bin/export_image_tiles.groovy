@@ -4,6 +4,12 @@ import qupath.lib.images.writers.TileExporter
 def project = getProject()
 def images = project.getImageList()
 
+def targetImageName = System.getenv('IMAGE_NAME')?.trim()
+def imagesToExport = targetImageName ? images.findAll { it.getImageName() == targetImageName } : images
+if (targetImageName && imagesToExport.isEmpty()) {
+    throw new IllegalArgumentException("No image found with name: ${targetImageName}")
+}
+
 def exportDirEnv = System.getenv('QUPATH_EXPORT_DIR')
 def exportRoot = (exportDirEnv != null && !exportDirEnv.trim().isEmpty()) ? new File(exportDirEnv) : new File(PROJECT_BASE_DIR)
 exportRoot.mkdirs()
@@ -33,14 +39,15 @@ if (tileDownsample <= 0) {
 }
 
 println "Found ${images.size()} images in project: ${project.getName()}"
+if (targetImageName) println "Targeting image: ${targetImageName}"
 println "Export root: ${exportRoot.absolutePath}"
 println "Tile size: ${tileSize}"
 println "Tile overlap: ${tileOverlap}"
 println "Tile downsample: ${tileDownsample}"
 println "Include partial tiles: ${includePartialTiles}"
 
-if (images.isEmpty()) {
-    print 'No images found in project – nothing to export.'
+if (imagesToExport.isEmpty()) {
+    print 'No images to export – nothing to do.'
     return
 }
 
@@ -53,14 +60,14 @@ def normalizeTileFilename = { String name ->
     return name.replace(',', '_').replace(' ', '_')
 }
 
-for (entry in images) {
+for (entry in imagesToExport) {
     idx++
     def imageName = entry.getImageName()
     def safeName = imageName.replaceAll('[^a-zA-Z0-9._-]', '_')
     def imageOutDir = new File(exportRoot, safeName)
     imageOutDir.mkdirs()
 
-    println "[${idx}/${images.size()}] Starting tile export for image: ${imageName}"
+    println "[${idx}/${imagesToExport.size()}] Starting tile export for image: ${imageName}"
 
     try {
         def imageData = entry.readImageData()
@@ -97,10 +104,10 @@ for (entry in images) {
         }
 
         success++
-        println "[${idx}/${images.size()}] Finished tile export: ${imageName} -> ${imageOutDir.absolutePath} (renamed ${renamedCount} tiles)"
+        println "[${idx}/${imagesToExport.size()}] Finished tile export: ${imageName} -> ${imageOutDir.absolutePath} (renamed ${renamedCount} tiles)"
     } catch (Throwable t) {
         fail++
-        println "[${idx}/${images.size()}] Failed tile export for ${imageName}: ${t.getMessage()}"
+        println "[${idx}/${imagesToExport.size()}] Failed tile export for ${imageName}: ${t.getMessage()}"
     }
 
     System.gc()

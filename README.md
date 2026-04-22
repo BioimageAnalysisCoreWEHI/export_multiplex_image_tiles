@@ -8,6 +8,7 @@ Nextflow pipeline for exporting tiles from images in a QuPath project using QuPa
 - Iterates through all images in a `.qpproj` project.
 - Exports image tiles using user-defined tile size and overlap.
 - Creates one folder per image containing that image's tile files.
+- Images are exported **in parallel** — one Nextflow job per image.
 
 ## Required parameters
 
@@ -44,7 +45,7 @@ nextflow run main.nf \
 
 - `tiles/` output directory containing one folder per image in the QuPath project.
 - Per-image folder names are sanitized from QuPath image names.
-- `qupath_tile_export.log` with the full QuPath export log.
+- `logs/` directory containing one `<image>_export.log` per image.
 
 ## Merging tile GeoJSON back to full-image GeoJSON
 
