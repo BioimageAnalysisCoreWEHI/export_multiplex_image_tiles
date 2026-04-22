@@ -13,7 +13,8 @@ Nextflow pipeline for exporting tiles from images in a QuPath project using QuPa
 ## Required parameters
 
 - `--project` Path to QuPath project (`.qpproj`).
-- `--tile_size` Tile size in pixels (for example `1024`).
+- `--tile_width` Tile width in pixels (for example `1024`).
+- `--tile_height` Tile height in pixels (for example `1024`).
 - `--tile_overlap` Tile overlap in pixels (for example `128`).
 
 Optional:
@@ -34,7 +35,8 @@ nextflow run main.nf \
 	-profile singularity,medium \
 	--project /path/to/project.qpproj \
 	--qupath_bin /stornext/System/data/software/rhel/9/base/tools/QuPath/0.6.0/bin/QuPath \
-	--tile_size 1024 \
+	--tile_width 1024 \
+	--tile_height 1024 \
 	--tile_overlap 128 \
 	--downsample 1.0 \
 	--include_partial_tiles true \

@@ -14,22 +14,27 @@ def exportDirEnv = System.getenv('QUPATH_EXPORT_DIR')
 def exportRoot = (exportDirEnv != null && !exportDirEnv.trim().isEmpty()) ? new File(exportDirEnv) : new File(PROJECT_BASE_DIR)
 exportRoot.mkdirs()
 
-def tileSizeEnv = System.getenv('TILE_SIZE')
+def tileWidthEnv = System.getenv('TILE_WIDTH')
+def tileHeightEnv = System.getenv('TILE_HEIGHT')
 def tileOverlapEnv = System.getenv('TILE_OVERLAP')
 def tileDownsampleEnv = System.getenv('TILE_DOWNSAMPLE')
 def includePartialTilesEnv = System.getenv('INCLUDE_PARTIAL_TILES')
 
-if (tileSizeEnv == null || tileOverlapEnv == null || tileDownsampleEnv == null || includePartialTilesEnv == null) {
-    throw new IllegalArgumentException('TILE_SIZE, TILE_OVERLAP, TILE_DOWNSAMPLE and INCLUDE_PARTIAL_TILES must be provided via environment variables')
+if (tileWidthEnv == null || tileHeightEnv == null || tileOverlapEnv == null || tileDownsampleEnv == null || includePartialTilesEnv == null) {
+    throw new IllegalArgumentException('TILE_WIDTH, TILE_HEIGHT, TILE_OVERLAP, TILE_DOWNSAMPLE and INCLUDE_PARTIAL_TILES must be provided via environment variables')
 }
 
-def tileSize = Integer.parseInt(tileSizeEnv)
+def tileWidth = Integer.parseInt(tileWidthEnv)
+def tileHeight = Integer.parseInt(tileHeightEnv)
 def tileOverlap = Integer.parseInt(tileOverlapEnv)
 def tileDownsample = Double.parseDouble(tileDownsampleEnv)
 def includePartialTiles = Boolean.parseBoolean(includePartialTilesEnv)
 
-if (tileSize <= 0) {
-    throw new IllegalArgumentException('TILE_SIZE must be > 0')
+if (tileWidth <= 0) {
+    throw new IllegalArgumentException('TILE_WIDTH must be > 0')
+}
+if (tileHeight <= 0) {
+    throw new IllegalArgumentException('TILE_HEIGHT must be > 0')
 }
 if (tileOverlap < 0) {
     throw new IllegalArgumentException('TILE_OVERLAP must be >= 0')
@@ -41,7 +46,8 @@ if (tileDownsample <= 0) {
 println "Found ${images.size()} images in project: ${project.getName()}"
 if (targetImageName) println "Targeting image: ${targetImageName}"
 println "Export root: ${exportRoot.absolutePath}"
-println "Tile size: ${tileSize}"
+println "Tile width: ${tileWidth}"
+println "Tile height: ${tileHeight}"
 println "Tile overlap: ${tileOverlap}"
 println "Tile downsample: ${tileDownsample}"
 println "Include partial tiles: ${includePartialTiles}"
@@ -73,7 +79,7 @@ for (entry in imagesToExport) {
         def imageData = entry.readImageData()
 
         new TileExporter(imageData)
-            .tileSize(tileSize)
+            .tileSize(tileWidth, tileHeight)
             .overlap(tileOverlap)
             .downsample(tileDownsample)
             .includePartialTiles(includePartialTiles)

@@ -3,7 +3,8 @@ nextflow.enable.dsl = 2
 params.project = null
 params.qupath_bin = "/stornext/System/data/software/rhel/9/base/tools/QuPath/0.6.0/bin/QuPath"
 params.script = "${projectDir}/bin/export_image_tiles.groovy"
-params.tile_size = null
+params.tile_width = null
+params.tile_height = null
 params.tile_overlap = null
 params.downsample = 1.0
 params.include_partial_tiles = true
@@ -44,7 +45,7 @@ process EXPORT_QUPATH_TILES {
     publishDir "${params.outdir}/logs",  mode: params.publish_dir_mode
 
     input:
-    tuple val(project_path), val(qupath_bin), val(script_path), val(image_name), val(tile_size), val(tile_overlap), val(downsample), val(include_partial_tiles)
+    tuple val(project_path), val(qupath_bin), val(script_path), val(image_name), val(tile_width), val(tile_height), val(tile_overlap), val(downsample), val(include_partial_tiles)
 
     output:
     path "tile_output/*", emit: tiles
@@ -72,7 +73,8 @@ process EXPORT_QUPATH_TILES {
 
     mkdir -p tile_output
     export QUPATH_EXPORT_DIR="\$(pwd)/tile_output"
-    export TILE_SIZE="${tile_size}"
+    export TILE_WIDTH="${tile_width}"
+    export TILE_HEIGHT="${tile_height}"
     export TILE_OVERLAP="${tile_overlap}"
     export TILE_DOWNSAMPLE="${downsample}"
     export INCLUDE_PARTIAL_TILES="${include_partial_tiles}"
@@ -90,8 +92,11 @@ workflow {
     if (!params.qupath_bin) {
         error "Missing required parameter: --qupath_bin"
     }
-    if (params.tile_size == null) {
-        error "Missing required parameter: --tile_size"
+    if (params.tile_width == null) {
+        error "Missing required parameter: --tile_width"
+    }
+    if (params.tile_height == null) {
+        error "Missing required parameter: --tile_height"
     }
     if (params.tile_overlap == null) {
         error "Missing required parameter: --tile_overlap"
@@ -117,8 +122,11 @@ workflow {
         error "Groovy script does not exist: ${params.script} (tried: ${scriptCandidates*.toString().join(', ')})"
     }
 
-    if ((params.tile_size as int) <= 0) {
-        error "tile_size must be > 0"
+    if ((params.tile_width as int) <= 0) {
+        error "tile_width must be > 0"
+    }
+    if ((params.tile_height as int) <= 0) {
+        error "tile_height must be > 0"
     }
     if ((params.tile_overlap as int) < 0) {
         error "tile_overlap must be >= 0"
@@ -136,7 +144,8 @@ workflow {
         | LIST_IMAGES
 
     LIST_IMAGES.out
-        .splitText(trim: true)
+        .splitText()
+        .map { it.trim() }
         .filter { it }
         .map { image_name ->
             tuple(
@@ -144,7 +153,8 @@ workflow {
                 qupathExe.toString(),
                 scriptFile.toString(),
                 image_name,
-                params.tile_size as int,
+                params.tile_width as int,
+                params.tile_height as int,
                 params.tile_overlap as int,
                 params.downsample as double,
                 params.include_partial_tiles as boolean

@@ -8,7 +8,7 @@
     "input_output_options": {
       "title": "Input/output options",
       "type": "object",
-      "required": ["project", "tile_size", "tile_overlap", "outdir"],
+      "required": ["project", "tile_width", "tile_height", "tile_overlap", "outdir"],
       "properties": {
         "project": {
           "type": "string",
@@ -30,10 +30,15 @@
           "default": "bin/export_image_tiles.groovy",
           "description": "Path to Groovy script run by QuPath in headless mode"
         },
-        "tile_size": {
+        "tile_width": {
           "type": "integer",
           "minimum": 1,
-          "description": "Tile size in pixels"
+          "description": "Tile width in pixels"
+        },
+        "tile_height": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Tile height in pixels"
         },
         "tile_overlap": {
           "type": "integer",
@@ -49,7 +54,7 @@
         "include_partial_tiles": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to include edge tiles that are smaller than tile_size"
+          "description": "Whether to include edge tiles that are smaller than the specified tile dimensions"
         },
         "outdir": {
           "type": "string",
