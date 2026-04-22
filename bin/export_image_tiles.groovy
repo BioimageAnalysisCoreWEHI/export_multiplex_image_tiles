@@ -50,14 +50,7 @@ int fail = 0
 def start = System.currentTimeMillis()
 
 def normalizeTileFilename = { String name ->
-    def updated = name.replace(" SIMS [", " SIMS_[")
-    def matcher = (updated =~ /\[x=-?\d+,y=-?\d+,w=\d+,h=\d+\]/)
-    if (matcher.find()) {
-        def coordBlock = matcher.group(0)
-        def normalizedCoordBlock = coordBlock.replace(',', '_')
-        updated = updated.replace(coordBlock, normalizedCoordBlock)
-    }
-    return updated
+    return name.replace(',', '_').replace(' ', '_')
 }
 
 for (entry in images) {

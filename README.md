@@ -63,7 +63,7 @@ python bin/merge_tile_geojson.py \
 
 Notes:
 
-- The script parses tile offsets from filenames like `[x=824,y=1648,w=1024,h=400]`.
+- The script parses tile offsets from filenames like `[x=824_y=1648_w=1024_h=400]`.
 - It shifts polygons into global coordinates before merging.
 - `--core-filter` keeps objects whose centroid falls in the non-overlap core of each tile.
 - `--dedup-iou` applies NMS-style duplicate removal in overlap regions.
