@@ -11,9 +11,11 @@ params.include_partial_tiles = true
 params.outdir = "results"
 params.publish_dir_mode = "copy"
 params.validate_params = true
+params.container = null
 
 process LIST_IMAGES {
     tag { project_path.tokenize('/').last() }
+    container params.container
 
     input:
     tuple val(project_path), val(qupath_bin), val(list_script_path)
@@ -39,10 +41,11 @@ process LIST_IMAGES {
 
 process EXPORT_QUPATH_TILES {
     tag { image_name }
+    container params.container
     label 'process_medium'
 
-    publishDir "${params.outdir}/tiles", mode: params.publish_dir_mode, saveAs: { new File(it).name }
-    publishDir "${params.outdir}/logs",  mode: params.publish_dir_mode
+    publishDir "${params.outdir}/tiles", mode: params.publish_dir_mode, pattern: "tile_output/*", saveAs: { new File(it).name }
+    publishDir "${params.outdir}/logs",  mode: params.publish_dir_mode, pattern: "*.log"
 
     input:
     tuple val(project_path), val(qupath_bin), val(script_path), val(image_name), val(tile_width), val(tile_height), val(tile_overlap), val(downsample), val(include_partial_tiles)
@@ -107,8 +110,12 @@ workflow {
         error "Project file does not exist: ${params.project}"
     }
 
+    if (workflow.containerEngine && !params.container) {
+        error "Missing required parameter for -profile ${workflow.profile}: --container (path to export_multiplex_image_tiles.sif)"
+    }
+    // With a container, QuPath is inside the image (/usr/local/bin/QuPath) and is checked by the task itself
     def qupathExe = file(params.qupath_bin)
-    if (!qupathExe.exists()) {
+    if (!workflow.containerEngine && !qupathExe.exists()) {
         error "QuPath binary does not exist: ${params.qupath_bin}"
     }
 

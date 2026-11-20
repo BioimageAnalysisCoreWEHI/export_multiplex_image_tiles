@@ -1,0 +1,36 @@
+Bootstrap: docker
+From: ubuntu:24.04
+
+# QuPath 0.6.0 (official Linux release, with its own Java) for headless tile export (bin/*.groovy).
+# Build (no root needed on most HPC systems), from the repository root:
+#   apptainer build --fakeroot export_multiplex_image_tiles.sif containers/export_multiplex_image_tiles.def
+
+%files
+  bin/export_image_tiles.groovy /opt/export_multiplex_image_tiles/bin/export_image_tiles.groovy
+  bin/list_images.groovy /opt/export_multiplex_image_tiles/bin/list_images.groovy
+  bin/create_project.groovy /opt/export_multiplex_image_tiles/bin/create_project.groovy
+
+%post
+  set -eu
+  QP_SHA256=19ec6d821678c99b943a61852d05c88a770b9fbc48bb09cd0209742a00015ee6
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -qq
+  apt-get install -y -qq --no-install-recommends ca-certificates wget xz-utils procps \
+      libfontconfig1 libfreetype6 libgl1 libgtk-3-0 libxtst6 libxxf86vm1 libasound2t64 >/dev/null
+  rm -rf /var/lib/apt/lists/*
+  wget -q -O /tmp/qp.tar.xz https://github.com/qupath/qupath/releases/download/v0.6.0/QuPath-v0.6.0-Linux.tar.xz
+  echo "${QP_SHA256}  /tmp/qp.tar.xz" | sha256sum -c
+  mkdir -p /opt/qupath && tar -xJf /tmp/qp.tar.xz -C /opt/qupath && rm /tmp/qp.tar.xz
+  [ -x /opt/qupath/QuPath/bin/QuPath ]
+  ln -s /opt/qupath/QuPath/bin/QuPath /usr/local/bin/QuPath
+  chmod -R a+rX /opt/qupath /opt/export_multiplex_image_tiles
+  printf 'QuPath 0.6.0 (QuPath-v0.6.0-Linux.tar.xz sha256 %s)\n' "$QP_SHA256" > /opt/export_multiplex_image_tiles/versions.txt
+
+%runscript
+  exec /usr/local/bin/QuPath "$@"
+
+%test
+  /usr/local/bin/QuPath --version
+
+%labels
+  Description Headless QuPath 0.6.0 for export_multiplex_image_tiles
